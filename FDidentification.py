@@ -1,31 +1,50 @@
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # Locate forbush decreases in neutron counts
 # Kimberlee Dube
 # August 2017
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from datetime import timedelta, datetime
 
-# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Parameter: number - float, Decimal date, eg. 2016.35
+# Return: Input number as datetime, eg. 2016-05-08
 def convert_partial_year(number):
     year = int(number)
-    d = timedelta(days=(number - year)*(365))
-    day_one = datetime(year,1,1)
+    d = timedelta(days=(number - year)*365)
+    day_one = datetime(year, 1, 1)
     date = d + day_one
     return date
 
 
-counts = np.zeros(5695)
-dates = np.zeros(5695)
-text_file = open("OULU_2002_01_01", "r")
-lines = text_file.readlines()
-for i in range(len(lines)):
-    s = lines[i].split()
-    dates[i] = s[2]
-    counts[i] = s[4]
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Load available daily neutron count values for input station.
+# Parameter: station - string, 4 letter neutron monitor station code
+# Return: dates - array of floats containing decimal dates
+#         counts - array of corrected neutron counts corresponding to dates
+def loadneutrondata(station):
+    station_list = ['OULU']
+    file_locs = ['OULU_2002_01_01']
+    data_file = station_list.index(station)
+    open_file = open(file_locs[data_file], "r")
 
+    counts = []  # Initialize arrays
+    dates = []
+
+    lines = open_file.readlines()
+    for i in range(len(lines)):
+        s = lines[i].split()
+        dates.append(float(s[2]))
+        counts.append(float(s[4]))
+
+    return np.array(dates), np.array(counts)
+
+
+# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+dates, counts = loadneutrondata("OULU")
 counts = 100 * (counts - np.nanmean(counts)) / np.nanmean(counts)
 
 # 90 day running mean
