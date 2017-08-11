@@ -50,13 +50,11 @@ def loadneutrondata(station):
 
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 def findevents(dates, counts):
-    counts_n = 100 * (counts - np.nanmean(counts)) / np.nanmean(counts)  # normalize
-
     # Classify minimums in count as times when count decreases by >=3% from 90 day running mean
-    y = pd.Series(counts_n)
+    y = pd.Series(counts)
     mean90days = y.rolling(center=True, window=90).mean()
-    diff = counts_n - mean90days
-    below3 = np.where(np.abs(diff) >= 3)
+    diff = 100 * (counts - mean90days) / mean90days
+    below3 = np.where(diff <= -3)
     below3_dates = np.array(dates[below3])
 
     # find reference level (average of 14 days before event)
@@ -64,7 +62,7 @@ def findevents(dates, counts):
     count_change = np.zeros(len(below3))
     for i in range(len(below3)):
         background = np.nanmean(counts[below3[i]-14:below3[i]-1])
-        # find relative percent change in count
+        # find percent change in count relative to background
         count_change[i] = 100 * (counts[below3[i]] - background) / background
 
     return below3_dates, count_change
