@@ -12,7 +12,7 @@ from datetime import timedelta, datetime
 # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # Parameter: number - float, Decimal date, eg. 2016.35
 # Return: Input number as datetime, eg. 2016-05-08
-def convert_partial_year(number):
+def convertdecimalyear(number):
     year = int(number)
     d = timedelta(days=(number - year)*365)
     day_one = datetime(year, 1, 1)
