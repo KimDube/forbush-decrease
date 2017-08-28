@@ -1,26 +1,16 @@
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Locate forbush decreases in neutron counts
-# Kimberlee Dube
-# August 2017
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+"""
+Locate Forbush decreases in neutron counts
+Kimberlee Dube
+August 2017
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from datetime import timedelta, datetime
 
 
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Parameter: number - float, Decimal date, eg. 2016.35
-# Return: Input number as datetime, eg. 2016-05-08
-def convertdecimalyear(number):
-    year = int(number)
-    d = timedelta(days=(number - year)*365)
-    day_one = datetime(year, 1, 1)
-    date = d + day_one
-    return date
-
-
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# -----------------------------------------------------------------------------
 # Load available daily neutron count values for input station.
 # Parameter: station - string, 4 letter neutron monitor station code
 # options: Oulu, Moscow, Newark
@@ -31,7 +21,7 @@ def loadneutrondata(station):
     file_locs = ['OULU_2002_2017.txt', 'MOSC_2002_2017.txt', 'NEWK_2002_2017.txt',
                  'CLIM_2002_2017.txt']
     data_file = station_list.index(station)
-    open_file = open(file_locs[data_file], "r")
+    open_file = open('/home/kimberlee/Masters/ForbushDecrease/'+file_locs[data_file], "r")
 
     counts = []  # Initialize arrays
     dates = []
@@ -48,7 +38,7 @@ def loadneutrondata(station):
     return np.array(dates), counts
 
 
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# -----------------------------------------------------------------------------
 def findevents(dates, counts):
     # Classify minimums in count as times when count decreases by >=3% from 90 day running mean
     y = pd.Series(counts)
@@ -68,7 +58,7 @@ def findevents(dates, counts):
     return below3_dates, count_change
 
 
-# :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     dates, counts = loadneutrondata("CLIM")
     bel3days, bel3counts = findevents(dates, counts)
