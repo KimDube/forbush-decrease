@@ -11,9 +11,52 @@ from matplotlib.colors import ListedColormap
 import numpy as np
 import seaborn as sns
 import datetime
+from ForbushDecrease import FDidentification as fdi
 
+
+# -----------------------------------------------------------------------------
+def findmeangcr(station, start_days):
+    dates, counts = fdi.loadneutrondata(station)
+    for i in range(len(dates)):  # convert strings to match start/end_days
+        dates[i] = dates[i].replace('.', '-')
+    # search for start_days and store count values
+    gcrarr = np.zeros((22, len(start_days)))
+    for i in range(len(start_days)):
+        x = np.where(dates == start_days[i])
+        x = int(x[0][0])
+        for j in range(22):
+            gcrarr[j, i] = counts[x+j]
+
+        background = np.nanmean(gcrarr[0:9, i])
+        gcrarr[:, i] = 100 * (gcrarr[:, i] - background) / background
+
+    fig, ax = plt.subplots()
+    sns.set_context("talk")
+    cmap = ListedColormap(sns.color_palette("RdBu_r", 50))
+    fax = ax.contourf(np.arange(-11, 11, 1), np.arange(1, len(start_days) + 1), gcrarr.transpose(), np.arange(-3, 3, 0.1),
+                      cmap=cmap, extend='both')
+    plt.ylabel("Event Number")
+    plt.xlabel("Day from Event")
+    plt.title("Forbush Decreases: 2002-05")
+    plt.gca().invert_yaxis()
+    cb = plt.colorbar(fax, orientation='horizontal', fraction=0.2, aspect=30)
+    cb.set_label("Neutron Count")
+    plt.show()
+
+    gcr_mean = np.zeros(22)  # for each day average events together
+    for i in range(22):
+        gcr_mean[i] = np.nanmean(gcrarr[i, :])
+
+    return gcr_mean
+
+# -----------------------------------------------------------------------------
 # events are those from IZMIRAN db with MagM >= 2.0
-event_dates = ['2007-01-29', '2007-02-12', '2007-03-22', '2007-09-20', '2007-10-18', '2007-10-25', '2007-11-19',
+
+'''
+# Events with Mag >=2%
+event_dates = ['2006-04-03', '2006-07-09', '2006-07-27', '2006-08-07', '2006-08-19', '2006-09-23',
+               '2006-10-19', '2006-11-09', '2006-12-08',
+               '2007-01-29', '2007-02-12', '2007-03-22', '2007-09-20', '2007-10-18', '2007-10-25', '2007-11-19',
                '2007-12-17', '2008-01-04', '2008-01-31', '2008-03-08', '2008-03-26', '2008-05-20', '2008-05-28',
                '2008-06-14', '2008-06-24', '2008-08-08', '2008-09-03', '2008-11-24', '2008-12-16', '2008-12-30',
                '2009-02-14', '2009-07-22', '2009-08-05', '2009-10-22', '2010-01-19', '2010-02-11', '2010-04-11',
@@ -21,7 +64,13 @@ event_dates = ['2007-01-29', '2007-02-12', '2007-03-22', '2007-09-20', '2007-10-
                '2010-10-22', '2011-02-04', '2011-03-01', '2011-03-10', '2011-04-05', '2011-04-11', '2011-04-29',
                '2011-05-27', '2011-06-04', '2011-06-09', '2011-06-17', '2011-06-22', '2011-07-11', '2011-07-18',
                '2011-07-30', '2011-08-05', '2011-09-26', '2011-10-05', '2011-10-08', '2011-10-24', '2011-11-01',
-               '2011-11-28']
+               '2011-11-28', '2012-01-22', '2012-03-08', '2012-04-12', '2012-05-03', '2012-05-30', '2012-06-16']
+'''
+# Events with Mag >=3%
+event_dates = ['2006-07-09', '2006-08-19', '2006-11-09', '2006-12-08', '2007-01-29', '2008-01-04', '2008-06-14',
+               '2010-05-28', '2011-03-10', '2011-04-05', '2011-04-11', '2011-06-04', '2011-06-17', '2011-06-22',
+               '2011-07-11', '2011-08-05', '2011-09-26', '2011-10-24', '2012-01-22', '2012-03-08', '2012-06-16']
+
 
 start_dates = []
 end_dates = []
@@ -38,7 +87,16 @@ for i in event_dates:
     fake_end_dates.append(f)
 
 print(start_dates)
-print(fake_end_dates)
+print(end_dates)
+
+gcrmean = findmeangcr('MOSC', start_dates)
+times = np.arange(-11, 11, 1)
+sns.set(context="talk", style="ticks", palette='cubehelix')
+fig2, ax1 = plt.subplots(figsize=(10, 8))
+ax1.plot(times, gcrmean)
+ax1.set_xlabel("Day from event")
+ax1.set_ylabel("Neutron Count Variation")
+plt.show()
 
 numevents = len(event_dates)
 eventarr = np.zeros((22, numevents))  # days, num. events
@@ -62,8 +120,8 @@ for i in range(len(start_dates)):
     km20_daily = km20.resample('D', dim='time', how='mean')
     km20_daily = np.array(km20_daily)
 
-    # background = np.nanmean(km20_daily[0:10])
-    # km20_daily = 100 * (km20_daily - background) / background  # Variation from background
+    background = np.nanmean(km20_daily[0:9])
+    km20_daily = 100 * (km20_daily - background) / background  # Variation from background
 
     eventarr[:, i] = km20_daily
 
@@ -74,8 +132,8 @@ for i in range(22):
 
 fig, ax = plt.subplots()
 sns.set_context("talk")
-cmap = ListedColormap(sns.color_palette("PuOr_r", 50))
-fax = ax.contourf(np.arange(-10, 12, 1), np.arange(1, numevents+1), eventarr.transpose(),
+cmap = ListedColormap(sns.color_palette("RdBu_r", 50))
+fax = ax.contourf(np.arange(-11, 11, 1), np.arange(1, numevents+1), eventarr.transpose(),
                   cmap=cmap, extend='both')
 plt.ylabel("Event Number")
 plt.xlabel("Day from Event")
@@ -85,12 +143,12 @@ cb = plt.colorbar(fax, orientation='horizontal', fraction=0.2, aspect=30)
 cb.set_label("Aerosol Extinction")
 plt.show()
 
-times = np.arange(-10, 12, 1)
+times = np.arange(-11, 11, 1)
 sns.set(context="talk", style="ticks", palette='cubehelix')
 fig2, ax1 = plt.subplots(figsize=(10, 8))
 ax1.plot(times, compm)
 ax1.set_title("tropics , %1.1f km" % altofinterest)
 ax1.set_xlabel("Day from event")
-ax1.set_ylabel("Extinction Variation")
+ax1.set_ylabel("Aerosol Extinction")
 plt.show()
 
