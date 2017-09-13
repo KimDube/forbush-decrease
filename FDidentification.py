@@ -2,7 +2,7 @@
 """
 Locate Forbush decreases in neutron counts
 Kimberlee Dube
-August 2017
+August/ September 2017
 """
 
 import matplotlib.pyplot as plt
@@ -10,13 +10,13 @@ import numpy as np
 import pandas as pd
 
 
-# -----------------------------------------------------------------------------
-# Load available daily neutron count values for input station.
-# Parameter: station - string, 4 letter neutron monitor station code
-# options: Oulu, Moscow, Newark
-# Return: dates - array of floats containing decimal dates
-#         counts - array of corrected neutron counts corresponding to dates
 def loadneutrondata(station):
+    """
+    Load available daily neutron count values for input station.
+    :param station: string, 4 letter neutron monitor station code: OULU, MOSC, NEWK, CLIM
+    :return: dates - array of floats containing decimal dates
+             counts - array of corrected neutron counts corresponding to dates
+    """
     station_list = ['OULU', 'MOSC', 'NEWK', 'CLIM']
     file_locs = ['OULU_2002_2017.txt', 'MOSC_2002_2017.txt', 'NEWK_2002_2017.txt',
                  'CLIM_2002_2017.txt']
@@ -40,7 +40,12 @@ def loadneutrondata(station):
 
 # -----------------------------------------------------------------------------
 def findevents(dates, counts):
-    # Classify minimums in count as times when count decreases by >=3% from 90 day running mean
+    """
+    Classify minimums in count as times when count decreases by >=3% from 90 day running mean
+    :param dates:
+    :param counts:
+    :return:
+    """
     y = pd.Series(counts)
     mean90days = y.rolling(center=True, window=90).mean()
     diff = 100 * (counts - mean90days) / mean90days
