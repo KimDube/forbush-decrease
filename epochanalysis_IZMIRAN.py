@@ -21,6 +21,7 @@ import pandas as pd
 import seaborn as sns
 import datetime
 import xarray
+from ForbushDecrease import monte_carlo as mc
 
 
 # -----------------------------------------------------------------------------
@@ -128,9 +129,12 @@ def find_mean_gcr(epoch_starts, plot=0, shifted=0):
         gcr_mean[j] = np.nanmean(gcrarr[j, :])
         gcr_std[j] = np.nanstd(gcrarr[j, :])
 
+    gcr_mean_err, gcr_std_err = mc.significance_test(counts, EPOCH_LENGTH, NUM_EVENTS, 10000)
+
     # Makes a surface plot and line plot for all events. Also the mean plot
     # with standard error
     if plot == 1:
+        """
         fig1, ax1 = plt.subplots()
         sns.set_context("talk")
         cmap = ListedColormap(sns.color_palette("RdBu_r", 50))
@@ -152,12 +156,17 @@ def find_mean_gcr(epoch_starts, plot=0, shifted=0):
         plt.xlabel("Day from Event")
         plt.title("Forbush Decreases: 2002-15")
         plt.show()
+        """
 
         sns.set(context="talk", style="darkgrid")
         sns.set_palette('hls', 12)
         plt.plot(PLOT_RANGE, gcr_mean, 'b')
         plt.plot(PLOT_RANGE, gcr_mean + (gcr_std / np.sqrt(NUM_EVENTS)), 'm')
         plt.plot(PLOT_RANGE, gcr_mean - (gcr_std / np.sqrt(NUM_EVENTS)), 'm')
+
+        plt.plot(PLOT_RANGE, gcr_mean_err + 1.96 * gcr_std_err, 'k-.')
+        plt.plot(PLOT_RANGE, gcr_mean_err - 1.96 * gcr_std_err, 'k-.')
+
         plt.ylabel("Mean Neutron Count Anomaly")
         plt.xlabel("Day from Event")
         plt.title("Forbush Decreases: 2002-15")
@@ -189,7 +198,7 @@ if __name__ == "__main__":
             e = e.strftime('%Y-%m-%d')
             end_dates.append(e)
 
-        mean_gcr = find_mean_gcr(start_dates, plot=0, shifted=1)
+        mean_gcr = find_mean_gcr(start_dates, plot=1, shifted=1)
 
     except:  # if epoch start file doesn't exist use initial IZMIRAN events to create it.
         print("Using non-shifted event onsets")
@@ -206,7 +215,7 @@ if __name__ == "__main__":
 
         mean_gcr = find_mean_gcr(start_dates, plot=0, shifted=0)
 
-    alt_of_interest = 31.5
+    alt_of_interest = 20.5
     # Data only exists up to 2012 for version 6
     x = osiris_nc.aer_level2_from_nc(nc_folder="/home/kimberlee/OsirisData/Level2/daily/",
                                      version='5.07', start_date='2002-01-01', end_date='2016-12-31')
@@ -239,13 +248,19 @@ if __name__ == "__main__":
     for i in range(EPOCH_LENGTH):
         compm[i] = np.nanmean(eventarr[i, :])
 
+    aer_mean_err, aer_std_err = mc.significance_test(km20_daily, EPOCH_LENGTH, NUM_EVENTS, 10000)
+
     sns.set(context="talk", style="darkgrid")
     sns.set_palette('hls', 12)
     fig, ax = plt.subplots(figsize=(20, 8))
-    plt.plot(PLOT_RANGE, eventarr)
-    plt.plot(PLOT_RANGE, compm, 'k')
+    # plt.plot(PLOT_RANGE, eventarr)
+    plt.plot(PLOT_RANGE, compm)
+    plt.plot(PLOT_RANGE, aer_mean_err + 1.96 * aer_std_err, 'k-.')
+    plt.plot(PLOT_RANGE, aer_mean_err - 1.96 * aer_std_err, 'k-.')
+
     plt.ylabel("OSIRIS Aerosol Extinction Anomaly - 5.07")
     plt.xlabel("Day from Event")
     plt.title("2002-15, %i km, tropics" % alt_of_interest)
+    plt.savefig('/home/kimberlee/Masters/ForbushDecrease/OSIRIS_line_507_%ikm' % alt_of_interest, dpi=300)
     plt.show()
 
